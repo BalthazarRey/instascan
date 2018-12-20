@@ -15,15 +15,52 @@ class Camera {
 
     async start()
     {
-        let constraints;
         var iOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+
+        let constraints = {
+            video: true,
+            audio: false
+        };
+
 
         if (iOS === true)
         {
-            constraints = {
-                video: {facingMode: 'environment'},
-                audio: false
-            };
+            this.stream = await navigator.mediaDevices.getUserMedia(constraints);
+            let devices = await navigator.mediaDevices.enumerateDevices();
+
+            let get_video_devices = devices.filter(d => d.kind === 'videoinput');
+
+            this.stream.getTracks().forEach(track => {
+                track.stop();
+            });
+
+            for (let i = 0; i < get_video_devices.length; i++)
+            {
+                if (get_video_devices[i].deviceId == this.id)
+                {
+                    if (get_video_devices[i].label.toLowerCase().indexOf('back') != -1 )
+                    {
+                        constraints  = {
+                            video: {
+                                facingMode: 'environment'
+                            },
+                            audio: false
+                        };
+                        break;
+                    }
+
+                    if (get_video_devices[i].label.toLowerCase().indexOf('front') != -1 )
+                    {
+                        constraints  = {
+                            video: {
+                                facingMode: 'user'
+                            },
+                            audio: false
+                        };
+                        break;
+                    }
+                }
+            }
         }
         else
         {
@@ -39,9 +76,9 @@ class Camera {
             };
         }
 
-        this._stream = await navigator.mediaDevices.getUserMedia(constraints);
 
         const video = document.querySelector('video');
+        this._stream = await navigator.mediaDevices.getUserMedia(constraints);
         const videoTracks = this._stream.getVideoTracks();
 
         // make variable available to browser console
@@ -63,7 +100,13 @@ class Camera {
             stream.stop();
         }
 
+        console.log('stoping instascan');
         this._stream = null;
+    }
+
+    static stop_camera()
+    {
+        console.log(this._stream);
     }
 
     static async getCameras()
